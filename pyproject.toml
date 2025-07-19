@@ -1,0 +1,18 @@
+[project]
+name = "owned-core-ads"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Matt Main_PC",email = "matmigg0804@gmail.com"}
+]
+readme = "README.md"
+requires-python = ">=3.11"
+dependencies = [
+    "undetected-chromedriver (>=3.5.5,<4.0.0)",
+    "selenium (>=4.34.2,<5.0.0)"
+]
+
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
