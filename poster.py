@@ -12,11 +12,10 @@ from creds import CredsManager
 creds_manager = CredsManager()
 usernames_passwords = creds_manager.get_creds()
 usernames = [cred["username"] for cred in usernames_passwords]
-print(f'Loaded these usernames:')
+print(f"Loaded these usernames:")
 for username in usernames:
-    print(f'\t{username}')
+    print(f"\t{username}")
 
-input()
 
 # --- Thread URLs ---
 threads = [
