@@ -7,14 +7,14 @@ from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import TimeoutException
 import random
 from creds import CredsManager
+from accounts_manager import AccountManager
 
 # --- User credentials ---
 creds_manager = CredsManager()
 usernames_passwords = creds_manager.get_creds()
 usernames = [cred["username"] for cred in usernames_passwords]
-print(f"Loaded these usernames:")
-for username in usernames:
-    print(f"\t{username}")
+
+account_manager = AccountManager(usernames)
 
 
 # --- Thread URLs ---
@@ -158,18 +158,19 @@ def make_ad_title():
     return random.choice(titles)
 
 
-def post_1_ad():
+def post_1_ad(thread_url):
     # --- Setup driver ---
     options = uc.ChromeOptions()
     options.add_argument(f"user-agent={random.choice(user_agents)}")
     driver = uc.Chrome(options=options)
 
     try:
-        account = random.choice(usernames_passwords)
-        username = account["username"]
-        password = account["password"]
-
-        thread_url = random.choice(threads)
+        username = account_manager.select_least_used_account()
+        print(f"Selected least used account: {username}")
+        account_manager.increment_account_uses(username)
+        password = creds_manager.get_password(username)
+        print(f'Selected this username and password for scraping: {username} / {password}')
+        
         driver.get(thread_url)
         time.sleep(3)
 
@@ -222,6 +223,50 @@ def post_1_ad():
             f"CKEDITOR.instances['vB_Editor_001_editor'].setData(`{message}`);"
         )
 
+        # --- Select random prefix from dropdown ---
+        prefix_dropdown = driver.find_element(By.ID, "prefixfield")
+        prefix_options = prefix_dropdown.find_elements(By.TAG_NAME, "option")
+
+        # Build list of valid option texts
+        valid_prefixes = [
+            "Release",
+            "Bot",
+            "Hack",
+            "Tool",
+            "Auto-Clicker",
+            "WoW Classic Vanilla Exploit",
+            "WoW Classic Vanilla Cheat",
+            "WoW Classic Vanilla Bot",
+            "WoW Classic TBC Exploit",
+            "WoW Classic TBC Cheat",
+            "WoW Classic TBC Bot",
+        ]
+
+        # Map option text to its WebElement
+        option_map = {opt.text.strip(): opt for opt in prefix_options}
+
+        # Filter available valid options
+        available_valid_options = [
+            option_map[text] for text in valid_prefixes if text in option_map
+        ]
+
+        if available_valid_options:
+            # Pick random valid option
+            chosen_option = random.choice(available_valid_options)
+        else:
+            # Fallback: pick any random option from the dropdown (excluding empty if needed)
+            non_empty_options = [
+                opt for opt in prefix_options if opt.get_attribute("value")
+            ]
+            if non_empty_options:
+                chosen_option = random.choice(non_empty_options)
+            else:
+                # Final fallback: pick any option (including empty) if dropdown is empty
+                chosen_option = random.choice(prefix_options)
+
+        chosen_option.click()
+        print(f"✅ Selected prefix: {chosen_option.text}")
+
         time.sleep(1)
 
         try:
@@ -246,7 +291,7 @@ def post_1_ad():
         print("✅ Clicked Submit button.")
 
         time.sleep(5)
-        print("✅ Post submission process should be complete.")
+        print(f"Successfully posted ad in thread: {thread_url}")
 
     except Exception as e:
         print(f"Tried to post to this thread: {thread_url}")
@@ -257,4 +302,6 @@ def post_1_ad():
 
 
 if __name__ == "__main__":
-    post_1_ad()
+    for thread_url in threads:
+        print(f"Posting ad to thread: {thread_url}")
+        post_1_ad(thread_url)

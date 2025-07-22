@@ -26,6 +26,14 @@ class CredsManager:
             raise ValueError(
                 "Credentials file is corrupted or not in valid JSON format."
             )
+        
+    def get_password(self,username):
+        creds = self.get_creds()
+        for cred in creds:
+            if cred.get("username") == username:
+                return cred.get("password")
+        print(f'[!] Warning: No password found for username: {username}')
+        return None
 
 
 if __name__ == "__main__":
